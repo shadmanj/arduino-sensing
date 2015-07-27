@@ -126,7 +126,7 @@ void loop(){
     detachInterrupt(0);
     delay(500);
     attachInterrupt(0, tap, RISING);
-    intType=0;    
+    int Type=0;    
   }
   delay(10); 
 }
