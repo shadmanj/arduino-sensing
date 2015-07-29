@@ -1,69 +1,100 @@
-#This code graphs data from the ADXL345 accelerometer in real time
+import sys, serial, argparse
+import numpy as np
+from time import sleep
+from collections import deque
 
-#Import libraries
-import serial 	                        #import Serial library
-import numpy	                        #imports numpy library
-import matplotlib.pyplot as plt 	#imports matplotlib for plotting
-from drawnow import *	                #allows live plotting of data
+import matplotlib.pyplot as plt 
+import matplotlib.animation as animation
 
-#Initialize output arrays
-xPosition = []
-yPosition = []
-zPosition = []
-time = []
+    
+# plot class
+class AnalogPlot:
+  # constr
+  def __init__(self, strPort, maxLen):
+      # open serial port
+      self.ser = serial.Serial(strPort, 9600)
 
-#Serial object arduinoData
-arduinoData = serial.Serial('/dev/ttyACM0', 9600)
-plt.ion()	#Enable interactive mode in matplotlib to plot live data
-cnt = 0
+      self.ax = deque([0.0]*maxLen)
+      self.ay = deque([0.0]*maxLen)
+      self.az = deque([0.0]*maxLen)
+      self.maxLen = maxLen
 
-#Function to plot data
-def makeFig():	
-	plt.ylim(-100000,200000)					#Min and Max y values
-	plt.title('Sensor Data Stream')		                #Plot title
-	plt.grid(True)						#Turn on grid
-	plt.ylabel('Value')					#Y label
-	plt.plot(xPosition,'ro-',label='X-Position')	        #Plot X-position
-	plt.legend(loc='upper left')		                #Legend
+  # add to buffer
+  def addToBuf(self, buf, val):
+      if len(buf) < self.maxLen:
+          buf.append(val)
+      else:
+          buf.pop()
+          buf.appendleft(val)
 
-	#plt2 = plt.twinx()					#Second plot for x values
-	plt2 = plt.twiny()
-	plt2.plot(yPosition, 'b',label='Y-Position')
-	plt2.legend(loc='upper center')
-	
-	#plt3 = plt.twinx()
-	plt3 = plt.twiny()
-	#Third plot for z values
-	plt3.plot(zPosition, 'g', label='Z-Position')
-	plt3.legend(loc='upper right')
+  # add data
+  def add(self, data):
+      assert(len(data) == 3)
+      self.addToBuf(self.ax, data[0])
+      self.addToBuf(self.ay, data[1])
+      self.addToBuf(self.az, data[2])
 
-while True:	#While loop to run forever
-	while(arduinoData.inWaiting()==0):	#Wait until data received
-		pass 						
-	arduinoString = arduinoData.readline()	#Read text data from serial port
-	dataArray = arduinoString.split(',')
-	print(dataArray)
-	#t = dataArray[0]					#Store time value
-	x = dataArray[0]			#Store x position value
-	y = dataArray[1]			#Store y position value
-	z = dataArray[2]			#Store z position value
+  # update plot
+  def update(self, frameNum, a0, a1, a2):
+      try:
+          line = self.ser.readline()
+          data = [float(val) for val in line.split()]
+          # print data
+          if(len(data) == 3):
+              self.add(data)
+              a0.set_data(range(self.maxLen), self.ax)
+              a1.set_data(range(self.maxLen), self.ay)
+              a2.set_data(range(self.maxLen), self.az)
+      except KeyboardInterrupt:
+          print('exiting')
+      
+      return a0, 
 
-	#time.append(t)			#Build time array by appending time values
-	xPosition.append(float(x))		#Append x position values
-	yPosition.append(float(y))		#Append y position values
-	zPosition.append(float(z))		#Append z position values
+  # clean up
+  def close(self):
+      # close serial
+      self.ser.flush()
+      self.ser.close()    
 
-	drawnow(makeFig)		#Call drawnow to make live graph
-	plt.pause(.0000001)		#Pause plotting to prevent crash
-	cnt = cnt + 1
-	if(cnt > 50):		        #For more than 50 data points, deletes first one from array
-		#time.pop(0)		#Allows us to see just the last 50 data points
-		xPosition.pop(0)
-		yPosition.pop(0)
-		zPosition.pop(0)
+# main() function
+def main():
+  # create parser
+  parser = argparse.ArgumentParser(description="LDR serial")
+  # add expected arguments
+  parser.add_argument('--port', dest='port', required=True)
 
+  # parse args
+  args = parser.parse_args()
+  
+  #strPort = '/dev/tty.usbserial-A7006Yqh'
+  strPort = args.port
 
+  print('reading from serial port %s...' % strPort)
 
+  # plot parameters
+  analogPlot = AnalogPlot(strPort, 100)
 
+  print('plotting data...')
 
+  # set up animation
+  fig = plt.figure()
+  ax = plt.axes(xlim=(0, 100), ylim=(-  10000, 50000))
+  a0, = ax.plot([], [])
+  a1, = ax.plot([], [])
+  a2, = ax.plot([], [])
+  anim = animation.FuncAnimation(fig, analogPlot.update, 
+                                 fargs=(a0, a1, a2), 
+                                 interval=50)
 
+  # show plot
+  plt.show()
+  
+  # clean up
+  analogPlot.close()
+
+  print('exiting.')
+  
+
+# call main
+if __name__ == '__main__':
+  main()
