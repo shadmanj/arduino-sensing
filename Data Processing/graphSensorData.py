@@ -1,33 +1,35 @@
+#Import needed libraries
 import sys, serial, argparse
 import numpy as np
 from time import sleep
 from collections import deque
-
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 
     
-# plot class
-class AnalogPlot:
+# Class to plot data
+class DigitalPlot:
   # constr
-  def __init__(self, strPort, maxLen):
+  def __init__(self, Port, maxLen):
       # open serial port
-      self.ser = serial.Serial(strPort, 9600)
-
+      self.ser = serial.Serial(Port, 9600)
+      # define arrays to store display data
       self.ax = deque([0.0]*maxLen)
       self.ay = deque([0.0]*maxLen)
       self.az = deque([0.0]*maxLen)
+      # set maximum length of array
       self.maxLen = maxLen
 
-  # add to buffer
+  # Update buffer array with data coming in and data to be discarded
   def addToBuf(self, buf, val):
       if len(buf) < self.maxLen:
           buf.append(val)
+      # If buffer array is full, drop the oldest value and move array left
       else:
           buf.pop()
           buf.appendleft(val)
 
-  # add data
+  # Add data to buffer array
   def add(self, data):
       assert(len(data) == 3)
       self.addToBuf(self.ax, data[0])
@@ -63,18 +65,18 @@ def main():
   # add expected arguments
   parser.add_argument('--port', dest='port', required=True)
 
-  # parse args
+  # parse arguments
   args = parser.parse_args()
   
-  #strPort = '/dev/tty.usbserial-A7006Yqh'
-  strPort = args.port
+  #Port = '/dev/tty.usbserial-A7006Yqh'
+  Port = args.port
 
-  print('reading from serial port %s...' % strPort)
+  print('Reading from serial port %s' % Port)
 
   # plot parameters
-  analogPlot = AnalogPlot(strPort, 100)
+  digitalPlot = DigitalPlot(Port, 100)
 
-  print('plotting data...')
+  print('Plotting data')
 
   # set up animation
   fig = plt.figure()
@@ -82,7 +84,7 @@ def main():
   a0, = ax.plot([], [])
   a1, = ax.plot([], [])
   a2, = ax.plot([], [])
-  anim = animation.FuncAnimation(fig, analogPlot.update, 
+  anim = animation.FuncAnimation(fig, digitalPlot.update, 
                                  fargs=(a0, a1, a2), 
                                  interval=50)
 
@@ -90,7 +92,7 @@ def main():
   plt.show()
   
   # clean up
-  analogPlot.close()
+  digitalPlot.close()
 
   print('exiting.')
   
