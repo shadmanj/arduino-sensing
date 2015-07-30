@@ -17,6 +17,7 @@ class DigitalPlot:
       self.ax = deque([0.0]*maxLen)
       self.ay = deque([0.0]*maxLen)
       self.az = deque([0.0]*maxLen)
+      self.abs = deque([0.0]*maxLen)
       # set maximum length of array
       self.maxLen = maxLen
 
@@ -32,12 +33,13 @@ class DigitalPlot:
   # Add data to buffer array
   def add(self, data):
       assert(len(data) == 3)
-      self.addToBuf(self.ax, data[0])
-      self.addToBuf(self.ay, data[1])
-      self.addToBuf(self.az, data[2])
+      self.addToBuf(self.ax, data[0]*.0312)
+      self.addToBuf(self.ay, data[1]*.0312)
+      self.addToBuf(self.az, data[2]*.0312)
+      self.addToBuf(self.abs, np.sqrt((data[0]*.0312)**(2)+(data[0]*.0312)**(2)+(data[0]*.0312)**(2)))
 
   # update plot
-  def update(self, frameNum, a0, a1, a2):
+  def update(self, frameNum, a0, a1, a2, a3):
       try:
           line = self.ser.readline()
           data = [float(val) for val in line.split()]
@@ -47,6 +49,7 @@ class DigitalPlot:
               a0.set_data(range(self.maxLen), self.ax)
               a1.set_data(range(self.maxLen), self.ay)
               a2.set_data(range(self.maxLen), self.az)
+              a3.set_data(range(self.maxLen), self.abs)
       except KeyboardInterrupt:
           print('exiting')
       
@@ -80,12 +83,13 @@ def main():
 
   # set up animation
   fig = plt.figure()
-  ax = plt.axes(xlim=(0, 100), ylim=(-  10000, 50000))
+  ax = plt.axes(xlim=(0, 100), ylim=(-2000, 2000))
   a0, = ax.plot([], [])
   a1, = ax.plot([], [])
   a2, = ax.plot([], [])
+  a3, = ax.plot([], [])
   anim = animation.FuncAnimation(fig, digitalPlot.update, 
-                                 fargs=(a0, a1, a2), 
+                                 fargs=(a0, a1, a2, a3), 
                                  interval=50)
 
   # show plot
