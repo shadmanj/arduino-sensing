@@ -6,6 +6,7 @@ from collections import deque
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 
+scale = .0078
     
 # Class to plot data
 class DigitalPlot:
@@ -36,7 +37,11 @@ class DigitalPlot:
       self.addToBuf(self.ax, data[0]*0)
 ##      self.addToBuf(self.ay, data[1]*.0312)
 ##      self.addToBuf(self.az, data[2]*.0312)
-      self.addToBuf(self.abs, np.sqrt((data[0]*.0312)**(2)+(data[0]*.0312)**(2)+(data[0]*.0312)**(2)))
+      x = data[0]*scale
+      y = data[1]*scale
+      z = data[2]*scale
+      absoluteAcceleration = np.sqrt(x**(2)+y**(2)+z**(2))
+      self.addToBuf(self.abs, absoluteAcceleration)
 
   # update plot
   def update(self, frameNum, a0, a3):
@@ -83,7 +88,10 @@ def main():
 
   # set up animation
   fig = plt.figure()
-  ax = plt.axes(xlim=(0, 100), ylim=(-2000, 2000))
+  ax = plt.axes(xlim=(0, 100), ylim=(-200, 500))
+  plt.title('Absolute Acceleration Stream')
+  plt.ylabel('Absolute Acceleration (G)')
+  plt.xlabel('Data Point')
   a0, = ax.plot([], [])
 ##  a1, = ax.plot([], [])
 ##  a2, = ax.plot([], [])
