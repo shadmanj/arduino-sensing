@@ -13,10 +13,10 @@ class DigitalPlot:
   def __init__(self, Port, maxLen):
       # open serial port
       self.ser = serial.Serial(Port, 9600)
+      
       # define arrays to store display data
       self.ax = deque([0.0]*maxLen)
-      self.ay = deque([0.0]*maxLen)
-      self.az = deque([0.0]*maxLen)
+
       # set maximum length of array
       self.maxLen = maxLen
 
@@ -31,10 +31,8 @@ class DigitalPlot:
 
   # Add data to buffer array
   def add(self, data):
-      assert(len(data) == 3)
+      assert(len(data) == 1)
       self.addToBuf(self.ax, data[0])
-      self.addToBuf(self.ay, data[1])
-      self.addToBuf(self.az, data[2])
 
   # update plot
   def update(self, frameNum, a0, a1, a2):
@@ -42,11 +40,9 @@ class DigitalPlot:
           line = self.ser.readline()
           data = [float(val) for val in line.split()]
           # print data
-          if(len(data) == 3):
+          if(len(data) == 1):
               self.add(data)
               a0.set_data(range(self.maxLen), self.ax)
-              a1.set_data(range(self.maxLen), self.ay)
-              a2.set_data(range(self.maxLen), self.az)
       except KeyboardInterrupt:
           print('exiting')
       
@@ -81,12 +77,10 @@ def main():
   # set up animation
   fig = plt.figure()
   ax = plt.axes(xlim=(0, 100), ylim=(-  10000, 50000))
+  plt.ylabel('Absolute Acceleration (Gs)')
   a0, = ax.plot([], [])
-  a1, = ax.plot([], [])
-  a2, = ax.plot([], [])
   anim = animation.FuncAnimation(fig, digitalPlot.update, 
-                                 fargs=(a0, a1, a2), 
-                                 interval=50)
+                                 fargs=(a0),interval=50)
 
   # show plot
   plt.show()
