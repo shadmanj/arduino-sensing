@@ -52,6 +52,11 @@ void loop(){
   //The Z value is stored in values[4] and values[5].
   z = ((int)values[5]<<8)|(int)values[4];
   
+  //Offset data
+  /*x = x - 7;
+  y = y - 4;
+  z = z + 126;*/
+  
   //Print the results to the terminal.
   Serial.print(x, DEC);
   Serial.print(" ");

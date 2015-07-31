@@ -34,13 +34,14 @@ class DigitalPlot:
   # Add data to buffer array
   def add(self, data):
       assert(len(data) == 3)
-      self.addToBuf(self.ax, data[0]*0)
+      self.addToBuf(self.ax, 0)
 ##      self.addToBuf(self.ay, data[1]*.0312)
 ##      self.addToBuf(self.az, data[2]*.0312)
       x = data[0]*scale
       y = data[1]*scale
       z = data[2]*scale
       absoluteAcceleration = np.sqrt(x**(2)+y**(2)+z**(2))
+      print(x,y,z,absoluteAcceleration)
       self.addToBuf(self.abs, absoluteAcceleration)
 
   # update plot
@@ -88,9 +89,10 @@ def main():
 
   # set up animation
   fig = plt.figure()
-  ax = plt.axes(xlim=(0, 100), ylim=(-200, 500))
+  ax = plt.axes(xlim=(0, 100), ylim=(0,8))
   plt.title('Absolute Acceleration Stream')
   plt.ylabel('Absolute Acceleration (G)')
+  plt.grid(True)
   plt.xlabel('Data Point')
   a0, = ax.plot([], [])
 ##  a1, = ax.plot([], [])
